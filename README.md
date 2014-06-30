@@ -11,12 +11,12 @@ Run the script and follow the assistant:
 Once it ends, you can run it again to add more users.
 
 ###Paranoid iptables
-    Only allow connection through vpn, localhost and internal tun network
+Only allow connection through vpn, localhost and internal tun network
 
--A OUTPUT -d <openvpn IP> -j ACCEPT
--A output -o tun+ -j ACCEPT
--A OUTPUT -d 127.0.0.1 -j ACCEPT
--A OUTPUT -j DROP
+    -A OUTPUT -d <openvpn IP> -j ACCEPT
+    -A output -o tun+ -j ACCEPT
+    -A OUTPUT -d 127.0.0.1 -j ACCEPT
+    -A OUTPUT -j DROP
 
 
 ###I want to run my own VPN but don't have a server for that
