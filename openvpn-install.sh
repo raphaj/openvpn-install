@@ -219,6 +219,13 @@ else
 	cd ~/ovpn-$CLIENT
 	sed -i "s|cert client.crt|cert $CLIENT.crt|" $CLIENT.conf
 	sed -i "s|key client.key|key $CLIENT.key|" $CLIENT.conf
+
+    echo "script-security 2" >> $CLIENT.conf
+    echo "up /etc/openvpn/update-resolv-conf" >> $CLIENT.conf
+    echo "down /etc/openvpn/update-resolv-conf" >> $CLIENT.conf
+
+    echo "auth-nocache" >> $CLIENT.conf
+
 	tar -czf ../ovpn-$CLIENT.tar.gz $CLIENT.conf ca.crt $CLIENT.crt $CLIENT.key
 	cd ~/
 	rm -rf ovpn-$CLIENT
