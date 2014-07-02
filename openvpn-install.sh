@@ -220,16 +220,18 @@ else
 	sed -i "s|cert client.crt|cert $CLIENT.crt|" $CLIENT.conf
 	sed -i "s|key client.key|key $CLIENT.key|" $CLIENT.conf
 
-    echo "script-security 2" >> $CLIENT.conf
+    echo "script-security 2 system" >> $CLIENT.conf
     echo "up '/etc/openvpn/update-resolv-conf;iptables -A OUTPUT -d $IP/32 -j ACCEPT;iptables -A OUTPUT -o tun+ -j ACCEPT;iptables -A OUTPUT -d 127.0.0.1/32 -j ACCEPT;iptables -A OUTPUT -j DROP; echo \"up\"; echo '" >> $CLIENT.conf
     echo "down /etc/openvpn/update-resolv-conf" >> $CLIENT.conf
     echo "# run reset_iptables.sh on disconnect" >> $CLIENT.conf
+
+    echo "#!/bin/bash" >> reset_iptables.sh
     echo "iptables -D OUTPUT -d $IP/32 -j ACCEPT;iptables -D OUTPUT -o tun+ -j ACCEPT;iptables -D OUTPUT -d 127.0.0.1/32 -j ACCEPT;iptables -D OUTPUT -j DROP; echo \"down\"" >> reset_iptables.sh
     chmod +x reset_iptables.sh
 
     echo "auth-nocache" >> $CLIENT.conf
 
-	tar -czf ../ovpn-$CLIENT.tar.gz $CLIENT.conf ca.crt $CLIENT.crt $CLIENT.key
+	tar -czf ../ovpn-$CLIENT.tar.gz $CLIENT.conf ca.crt $CLIENT.crt $CLIENT.key reset_iptables.sh
 	cd ~/
 	rm -rf ovpn-$CLIENT
 	echo ""
