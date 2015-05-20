@@ -6,7 +6,7 @@
 # VPS. It has been designed to be as unobtrusive and universal as possible.
 
 
-if [ $USER != 'root' ]; then
+if [ "$USER" != 'root' ]; then
 	echo "Sorry, you need to run this as root"
 	exit
 fi
@@ -51,25 +51,25 @@ if [ -e /etc/openvpn/server.conf ]; then
 			echo ""
 			echo "Tell me a name for the client cert"
 			echo "Please, use one word only, no special characters"
-			read -p "Client name: " -e -i client CLIENT
+			read -p "Client name: " -i client -e CLIENT
 			cd /etc/openvpn/easy-rsa/2.0/
 			source ./vars
 			# build-key for the client
 			export KEY_CN="$CLIENT"
 			export EASY_RSA="${EASY_RSA:-.}"
-			"$EASY_RSA/pkitool" $CLIENT
+			"$EASY_RSA/pkitool" "$CLIENT"
 			# Let's generate the client config
-			mkdir ~/ovpn-$CLIENT
-			cp /usr/share/doc/openvpn/examples/sample-config-files/client.conf ~/ovpn-$CLIENT/$CLIENT.conf
-			cp /etc/openvpn/easy-rsa/2.0/keys/ca.crt ~/ovpn-$CLIENT
-			cp /etc/openvpn/easy-rsa/2.0/keys/$CLIENT.crt ~/ovpn-$CLIENT
-			cp /etc/openvpn/easy-rsa/2.0/keys/$CLIENT.key ~/ovpn-$CLIENT
-			cd ~/ovpn-$CLIENT
-			sed -i "s|cert client.crt|cert $CLIENT.crt|" $CLIENT.conf
-			sed -i "s|key client.key|key $CLIENT.key|" $CLIENT.conf
-			tar -czf ../ovpn-$CLIENT.tar.gz $CLIENT.conf ca.crt $CLIENT.crt $CLIENT.key
+			mkdir ~/ovpn-"$CLIENT"
+			cp /usr/share/doc/openvpn/examples/sample-config-files/client.conf ~/ovpn-"$CLIENT"/"$CLIENT.conf"
+			cp /etc/openvpn/easy-rsa/2.0/keys/ca.crt ~/ovpn-"$CLIENT"
+			cp /etc/openvpn/easy-rsa/2.0/keys/"$CLIENT.crt" ~/ovpn-"$CLIENT"
+			cp /etc/openvpn/easy-rsa/2.0/keys/"$CLIENT.key" ~/ovpn-"$CLIENT"
+			cd ~/ovpn-"$CLIENT"
+			sed -i "s|cert client.crt|cert $CLIENT.crt|" "$CLIENT.conf"
+			sed -i "s|key client.key|key $CLIENT.key|" "$CLIENT.conf"
+			tar -czf ../ovpn-"$CLIENT.tar.gz" "$CLIENT.conf" ca.crt "$CLIENT.crt" "$CLIENT.key"
 			cd ~/
-			rm -rf ovpn-$CLIENT
+			rm -rf ovpn-"$CLIENT"
 			echo ""
 			echo "Client $CLIENT added, certs available at ~/ovpn-$CLIENT.tar.gz"
 			exit
@@ -77,10 +77,10 @@ if [ -e /etc/openvpn/server.conf ]; then
 			2)
 			echo ""
 			echo "Tell me the existing client name"
-			read -p "Client name: " -e -i client CLIENT
+			read -p "Client name: " -i client -e CLIENT
 			cd /etc/openvpn/easy-rsa/2.0/
 			. /etc/openvpn/easy-rsa/2.0/vars
-			. /etc/openvpn/easy-rsa/2.0/revoke-full $CLIENT
+			. /etc/openvpn/easy-rsa/2.0/revoke-full "$CLIENT"
 			# If it's the first time revoking a cert, we need to add the crl-verify line
 			if grep -q "crl-verify" "/etc/openvpn/server.conf"; then
 				echo ""
@@ -115,18 +115,18 @@ else
 	echo ""
 	echo "First I need to know the IPv4 address of the network interface you want OpenVPN"
 	echo "listening to."
-	read -p "IP address: " -e -i $IP IP
+	read -p "IP address: " -e -i "$IP" IP
 	echo ""
 	echo "What port do you want for OpenVPN?"
 	read -p "Port: " -e -i 1194 PORT
 	echo ""
 	echo "Do you want OpenVPN to be available at port 53 too?"
 	echo "This can be useful to connect under restrictive networks"
-	read -p "Listen at port 53 [y/n]: " -e -i n ALTPORT
+	read -p "Listen at port 53 [y/n]: " -i n -e ALTPORT
 	echo ""
 	echo "Finally, tell me your name for the client cert"
 	echo "Please, use one word only, no special characters"
-	read -p "Client name: " -e -i client CLIENT
+	read -p "Client name: " -i client -e CLIENT
 	echo ""
 	echo "Okay, that was all I needed. We are ready to setup your OpenVPN server now"
 	read -n1 -r -p "Press any key to continue..."
@@ -154,14 +154,14 @@ else
 	# because it's interactive and we don't want that. Yes, this could break
 	# the installation script if build-ca changes in the future.
 	export EASY_RSA="${EASY_RSA:-.}"
-	"$EASY_RSA/pkitool" --initca $*
+	"$EASY_RSA/pkitool" --initca "$*"
 	# Same as the last time, we are going to run build-key-server
 	export EASY_RSA="${EASY_RSA:-.}"
 	"$EASY_RSA/pkitool" --server server
 	# Now the client keys. We need to set KEY_CN or the stupid pkitool will cry
 	export KEY_CN="$CLIENT"
 	export EASY_RSA="${EASY_RSA:-.}"
-	"$EASY_RSA/pkitool" $CLIENT
+	"$EASY_RSA/pkitool" "$CLIENT"
 	# DH params
 	. /etc/openvpn/easy-rsa/2.0/build-dh
 	# Let's configure the server
@@ -176,12 +176,12 @@ else
 	sed -i 's|;push "redirect-gateway def1 bypass-dhcp"|push "redirect-gateway def1 bypass-dhcp"|' server.conf
 	sed -i "s|port 1194|port $PORT|" server.conf
 	# Obtain the resolvers from resolv.conf and use them for OpenVPN
-	cat /etc/resolv.conf | grep -v '#' | grep 'nameserver' | grep -E -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | while read line; do
+	grep -v '#' /etc/resolv.conf | grep 'nameserver' | grep -E -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | while read line; do
 		sed -i "/;push \"dhcp-option DNS 208.67.220.220\"/a\push \"dhcp-option DNS $line\"" server.conf
 	done
 	# Listen at port 53 too if user wants that
-	if [ $ALTPORT = 'y' ]; then
-		iptables -t nat -A PREROUTING -p udp -d $IP --dport 53 -j REDIRECT --to-port $PORT
+	if [ "$ALTPORT" = 'y' ]; then
+		iptables -t nat -A PREROUTING -p udp -d "$IP" --dport 53 -j REDIRECT --to-port "$PORT"
 		sed -i "/# By default this script does nothing./a\iptables -t nat -A PREROUTING -p udp -d $IP --dport 53 -j REDIRECT --to-port $PORT" /etc/rc.local
 	fi
 	# Enable net.ipv4.ip_forward for the system
@@ -189,12 +189,12 @@ else
 	# Avoid an unneeded reboot
 	echo 1 > /proc/sys/net/ipv4/ip_forward
 	# Set iptables
-	iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -j SNAT --to $IP
+	iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -j SNAT --to "$IP"
 	sed -i "/# By default this script does nothing./a\iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -j SNAT --to $IP" /etc/rc.local
 	# And finally, restart OpenVPN
 	/etc/init.d/openvpn restart
 	# Let's generate the client config
-	mkdir ~/ovpn-$CLIENT
+	mkdir ~/ovpn-"$CLIENT"
 	# Try to detect a NATed connection and ask about it to potential LowEndSpirit
 	# users
 	EXTERNALIP=$(wget -qO- ipv4.icanhazip.com)
@@ -205,35 +205,50 @@ else
 		echo "If your server is NATed (LowEndSpirit), I need to know the external IP"
 		echo "If that's not the case, just ignore this and leave the next field blank"
 		read -p "External IP: " -e USEREXTERNALIP
-		if [ $USEREXTERNALIP != "" ]; then
-			IP=$USEREXTERNALIP
+		if [ "$USEREXTERNALIP" != "" ]; then
+			IP="$USEREXTERNALIP"
 		fi
 	fi
 	# IP/port set on the default client.conf so we can add further users
 	# without asking for them
 	sed -i "s|remote my-server-1 1194|remote $IP $PORT|" /usr/share/doc/openvpn/examples/sample-config-files/client.conf
-	cp /usr/share/doc/openvpn/examples/sample-config-files/client.conf ~/ovpn-$CLIENT/$CLIENT.conf
-	cp /etc/openvpn/easy-rsa/2.0/keys/ca.crt ~/ovpn-$CLIENT
-	cp /etc/openvpn/easy-rsa/2.0/keys/$CLIENT.crt ~/ovpn-$CLIENT
-	cp /etc/openvpn/easy-rsa/2.0/keys/$CLIENT.key ~/ovpn-$CLIENT
-	cd ~/ovpn-$CLIENT
-	sed -i "s|cert client.crt|cert $CLIENT.crt|" $CLIENT.conf
-	sed -i "s|key client.key|key $CLIENT.key|" $CLIENT.conf
+	cp /usr/share/doc/openvpn/examples/sample-config-files/client.conf ~/ovpn-"$CLIENT"/"$CLIENT.conf"
+	cp /etc/openvpn/easy-rsa/2.0/keys/ca.crt ~/ovpn-"$CLIENT"
+	cp /etc/openvpn/easy-rsa/2.0/keys/"$CLIENT.crt" ~/ovpn-"$CLIENT"
+	cp /etc/openvpn/easy-rsa/2.0/keys/"$CLIENT.key" ~/ovpn-"$CLIENT"
+    cp /etc/openvpn/update-resolv-conf ~/ovpn-"$CLIENT"/
+	cd ~/ovpn-"$CLIENT"
 
-    echo "script-security 2 system" >> $CLIENT.conf
-    echo "up '/etc/openvpn/update-resolv-conf;iptables -A OUTPUT -d $IP/32 -j ACCEPT;iptables -A OUTPUT -o tun+ -j ACCEPT;iptables -A OUTPUT -d 127.0.0.1/32 -j ACCEPT;iptables -A OUTPUT -j DROP; echo \"up\"; echo '" >> $CLIENT.conf
-    echo "down /etc/openvpn/update-resolv-conf" >> $CLIENT.conf
-    echo "# run reset_iptables.sh on disconnect" >> $CLIENT.conf
+    {
+        echo "iptables -A OUTPUT -d $IP/32 -j ACCEPT"
+        echo "iptables -A OUTPUT -o tun+ -j ACCEPT"
+        echo "iptables -A OUTPUT -d 127.0.0.1/32 -j ACCEPT"
+        echo "iptables -A OUTPUT -j DROP"
+        echo "echo \"up\""
+    } >> update-resolv-conf
+
+	sed -i "s|cert client.crt|cert $CLIENT.crt|" "$CLIENT.conf"
+	sed -i "s|key client.key|key $CLIENT.key|" "$CLIENT.conf"
+
+    {
+        echo "keepalive 10 120"
+        echo "auth-retry interact"
+
+        echo "script-security 2 system"
+
+        echo "up '/etc/openvpn/update-resolv-conf'"
+        echo "down /etc/openvpn/update-resolv-conf"
+        echo "# run reset_iptables.sh on disconnect"
+        echo "auth-nocache"
+    } >> "$CLIENT.conf"
 
     echo "#!/bin/bash" >> reset_iptables.sh
     echo "iptables -D OUTPUT -d $IP/32 -j ACCEPT;iptables -D OUTPUT -o tun+ -j ACCEPT;iptables -D OUTPUT -d 127.0.0.1/32 -j ACCEPT;iptables -D OUTPUT -j DROP; echo \"down\"" >> reset_iptables.sh
     chmod +x reset_iptables.sh
 
-    echo "auth-nocache" >> $CLIENT.conf
-
-	tar -czf ../ovpn-$CLIENT.tar.gz $CLIENT.conf ca.crt $CLIENT.crt $CLIENT.key reset_iptables.sh
+	tar -czf "../ovpn-$CLIENT.tar.gz" "$CLIENT.conf" ca.crt "$CLIENT.crt" "$CLIENT.key" reset_iptables.sh
 	cd ~/
-	rm -rf ovpn-$CLIENT
+	rm -rf "ovpn-$CLIENT"
 	echo ""
 	echo "Finished!"
 	echo ""
