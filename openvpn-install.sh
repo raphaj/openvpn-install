@@ -246,7 +246,7 @@ else
     echo "iptables -D OUTPUT -d $IP/32 -j ACCEPT;iptables -D OUTPUT -o tun+ -j ACCEPT;iptables -D OUTPUT -d 127.0.0.1/32 -j ACCEPT;iptables -D OUTPUT -j DROP; echo \"down\"" >> reset_iptables.sh
     chmod +x reset_iptables.sh
 
-	tar -czf "../ovpn-$CLIENT.tar.gz" "$CLIENT.conf" ca.crt "$CLIENT.crt" "$CLIENT.key" reset_iptables.sh
+	tar -czf "../ovpn-$CLIENT.tar.gz" "$CLIENT.conf" ca.crt "$CLIENT.crt" "$CLIENT.key" reset_iptables.sh update-resolv-conf
 	cd ~/
 	rm -rf "ovpn-$CLIENT"
 	echo ""
